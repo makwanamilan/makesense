@@ -22,7 +22,8 @@ class MakeSenseInstance {
   bool firstView = true;
   String lastViewState;
   List<Events> eventsObject = new List();
-  int lastViewTimeStamp =0;
+  int lastViewTimeStamp = 0;
+
   void init(String serverURl, String appKey) {
     this.serverURl = serverURl;
     this.appKey = appKey;
@@ -33,12 +34,16 @@ class MakeSenseInstance {
     this.serverURl = serverURl;
     this.appKey = appKey;
 
-
-    updateFCMToken({"name":"milan","firebase_token":fcmToken,"cust_id":"${Uuid().v5(Uuid.NAMESPACE_URL, serverURl)}"});
+    updateFCMToken({
+      "name": "milan",
+      "firebase_token": fcmToken,
+      "cust_id": "${Uuid().v5(Uuid.NAMESPACE_URL, serverURl)}"
+    });
   }
 
-  void recordEvent({@required String key, Segmentation segmentation, views,int duration}) {
-    views=views==null?false:views;
+  void recordEvent(
+      {@required String key, Segmentation segmentation, views, int duration}) {
+    views = views == null ? false : views;
     Events events = new Events();
     events.count = 1;
     events.key = key;
@@ -49,24 +54,20 @@ class MakeSenseInstance {
     print(views);
     if (!views) {
       eventsObject = new List();
-
-    }else{
+    } else {
       eventsObject[0].segmentation.map.remove("visit");
       eventsObject[0].segmentation.map.remove("start");
-      eventsObject[0].segmentation.map.addAll({"dur":duration.toString()});
-      for(int i =0;i<eventsObject.length;i++){
+      eventsObject[0].segmentation.map.addAll({"dur": duration.toString()});
+      for (int i = 0; i < eventsObject.length; i++) {
         print(eventsObject[i].toMap());
       }
-
     }
     eventsObject.add(events);
 
-
-
     Connection()
         .events(serverURl +
-        "?events=${eventsToJson(eventsObject)}" +
-        defaultRequest())
+            "?events=${eventsToJson(eventsObject)}" +
+            defaultRequest())
         .then((onEvents) {
       if (onEvents.statusCode == 200) {
         print("success");
@@ -84,9 +85,8 @@ class MakeSenseInstance {
 
   updateFCMToken(Map<String, String> map) {
     Connection()
-        .updateToken(serverURl +
-        "?user_details=${json.encode(map)}"+
-        defaultRequest())
+        .updateToken(
+            serverURl + "?user_details=${json.encode(map)}" + defaultRequest())
         .then((onTokenUpdate) {
       if (onTokenUpdate.statusCode == 200) {
         print("success");
@@ -97,27 +97,26 @@ class MakeSenseInstance {
     });
   }
 
-  recordViews(String pageViewName,[int duration]) {
-
+  recordViews(String pageViewName, [int duration]) {
     firstView
-        ?recordEvent(
-      key: MakeSense.VIEW_EVENT_KEY,
-      segmentation:  Segmentation({
-        "name": pageViewName,
-        "segment": Platform.isAndroid ? "Android" : "iOS",
-        "start": "1",
-        "visit":"1"
-      }),
-    ):recordEvent(
-        key: MakeSense.VIEW_EVENT_KEY,
-        segmentation:  Segmentation({
-          "name": pageViewName,
-          "segment": Platform.isAndroid ? "Android" : "iOS",
-          "visit":"1"
-        }),
-        views: true,
-        duration: duration
-    );
+        ? recordEvent(
+            key: MakeSense.VIEW_EVENT_KEY,
+            segmentation: Segmentation({
+              "name": pageViewName,
+              "segment": Platform.isAndroid ? "Android" : "iOS",
+              "start": "1",
+              "visit": "1"
+            }),
+          )
+        : recordEvent(
+            key: MakeSense.VIEW_EVENT_KEY,
+            segmentation: Segmentation({
+              "name": pageViewName,
+              "segment": Platform.isAndroid ? "Android" : "iOS",
+              "visit": "1"
+            }),
+            views: true,
+            duration: duration);
     if (firstView) {
       firstView = false;
     }
@@ -130,20 +129,20 @@ class MakeSenseInstance {
   Future<Void> onStart(BuildContext context, String pageName) async {
     String route = /*ModalRoute.of(context).settings.name*/ pageName;
     int duration;
-    int currentTimeStamp = (new DateTime.now().millisecondsSinceEpoch/1000).round();
+    int currentTimeStamp =
+        (new DateTime.now().millisecondsSinceEpoch / 1000).round();
     print(currentTimeStamp);
     print(lastViewTimeStamp);
     if (lastViewState != route) {
       //dur current time stamp - lastViewTimeStamp = duration;
       duration = currentTimeStamp - lastViewTimeStamp;
       print(duration);
-
     }
     lastViewTimeStamp = currentTimeStamp;
 
     lastViewState = route;
 
     print(route);
-    recordViews(route,duration);
+    recordViews(route, duration);
   }
 }
